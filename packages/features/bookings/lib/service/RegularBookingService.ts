@@ -24,6 +24,7 @@ import type {
 import EventManager, { placeholderCreatedEvent } from "@calcom/features/bookings/lib/EventManager";
 import { getAssignmentReasonCategory } from "@calcom/features/bookings/lib/getAssignmentReasonCategory";
 import type { CheckBookingAndDurationLimitsService } from "@calcom/features/bookings/lib/handleNewBooking/checkBookingAndDurationLimits";
+import { mapBookingPersistenceError } from "@calcom/features/bookings/lib/handleNewBooking/mapBookingPersistenceError";
 import { handlePayment } from "@calcom/features/bookings/lib/handlePayment";
 import { handleWebhookTrigger } from "@calcom/features/bookings/lib/handleWebhookTrigger";
 import { isEventTypeLoggingEnabled } from "@calcom/features/bookings/lib/isEventTypeLoggingEnabled";
@@ -1816,14 +1817,8 @@ async function handler(
       };
     }
   } catch (_err) {
-    const err = getServerErrorFromUnknown(_err);
+    const err = mapBookingPersistenceError(_err);
     tracingLogger.error(`Booking ${eventTypeId} failed`, "Error when saving booking to db", err.message);
-    if (err.cause && typeof err.cause === "object" && "code" in err.cause && err.cause.code === "P2002") {
-      throw new HttpError({
-        statusCode: 409,
-        message: ErrorCode.BookingConflict,
-      });
-    }
     throw err;
   }
 
